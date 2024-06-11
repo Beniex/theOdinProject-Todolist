@@ -13,37 +13,48 @@ class Task {
         taskName, 
         taskDescription, 
         dueDate,
-        priorityRate, 
-        checkListItensNames, 
-        checkListItensStatus
+        priorityRate
         ) {
         this.projectName = projectName; 
         this.taskName = taskName; 
         this.taskDescription = taskDescription; 
         this.dueDate = dueDate;
         this.priorityRate = priorityRate; 
-        this.checkListItensNames = checkListItensNames;
-        this.checkListItensStatus = checkListItensStatus; 
     } 
 }
 
-const Projects = []; 
+var projects = []; 
 const DefaultProject = new Project("Main", []);
-const DefaultTask = new Task ("Main", "First Task", "This is the default task initialized", format(new Date(2014, 1, 11), "dd/MM/yyyy"), "High", ["item1", "item2", "item3"], [false, true, false]); 
-    
+const DefaultProject1 = new Project("Main1", []);
+const DefaultTask = new Task ("Main", "First Task", "This is the default task initialized", format(new Date(2022, 0, 22), "yyyy-MM-dd"), "Low"); 
+const DefaultTask1 = new Task ("Main", "seconde Task", "This is the default task initialized", format(new Date(2022, 0, 24), "yyyy-MM-dd"), "High"); 
+
+var workingProject = new Project(); 
+
 const initializeProjects = () => { 
     addTaskToProject(DefaultTask, DefaultProject); 
+    addTaskToProject(DefaultTask1, DefaultProject); 
+    addTaskToProject(DefaultTask, DefaultProject1); 
+    addTaskToProject(DefaultTask1, DefaultProject1); 
     saveProject(DefaultProject); 
+    saveProject(DefaultProject1); 
+
     storeProjects();  
-    console.log(retrieveStoredProjects() == Projects); 
+    setWorkingProject(DefaultProject); 
+}
+const getWorkingProject = () => {
+    return workingProject; 
+}
+const setWorkingProject = (project) =>{
+    workingProject = project; 
 }
 
 function retrieveStoredProjects(){
-    return localStorage.getItem("StoredProjects");
+    return JSON.parse(localStorage.getItem("StoredProjects"));
 }
 
 function storeProjects() {
-    localStorage.setItem("StoredProjects", Projects);
+    localStorage.setItem("StoredProjects", JSON.stringify(projects));
 }
 
 function addTaskToProject(task, project){
@@ -51,8 +62,8 @@ function addTaskToProject(task, project){
 }
 
 function saveProject(project){
-    Projects.push(project); 
+    projects.push(project); 
 }
 
 
-export default initializeProjects; 
+export {initializeProjects, retrieveStoredProjects, getWorkingProject, setWorkingProject}; 

@@ -18,6 +18,7 @@ module.exports = {
     new HtmlWebpackPlugin({
       title: 'TheOdinProject-Todolist',
       template: './src/index.html',
+      favicon: './src/favicon.ico',
     }),
   ],
   module: {
