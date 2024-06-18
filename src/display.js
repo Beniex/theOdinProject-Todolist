@@ -1,25 +1,40 @@
-import {retrieveStoredProjects, getWorkingProject, setWorkingProject} from './projects.js'; 
+import {retrieveStoredProjects, 
+    getWorkingProject, 
+    setWorkingProject, 
+    setWorkingTask, 
+    deleteTask,
+    createEmptyActiveTask,
+    getWorkingTask,
+    deleteProject,  
+    updateWorkingTask
+} from './projects.js'; 
 
-const FiltersElement = document.getElementById("filters"); 
 const ProjectsListElement = document.getElementById("projects");
 const ProjectNameElement = document.getElementById("projectName");
 const taskCardsElement = document.getElementById("taskCards");
 const workSpaceElement = document.getElementById("workSpace");
 
-
-
-
-
 const updateDisplay = () => {
     cleanProjectList(); 
-    cleanTaskCards();  
+    cleanTaskCards();
+    clearWorkingSpace();   
     populateProjectList(retrieveStoredProjects()); 
+    console.log("getWorkingProject"); 
+    console.log(getWorkingProject()); 
     populateTaskCards(getWorkingProject());
     updateProjectName(); 
 }
 
 function updateProjectName(){
     ProjectNameElement.textContent = getWorkingProject().name; 
+
+    let deleteProjectButtonElement = document.createElement("button"); 
+    deleteProjectButtonElement.textContent = "Delete project"; 
+    deleteProjectButtonElement.addEventListener('click', ()=> {
+        deleteProject();
+        updateDisplay(); 
+    });
+    ProjectNameElement.appendChild(deleteProjectButtonElement);
 }
 
 function populateProjectList (projects){
@@ -27,7 +42,7 @@ function populateProjectList (projects){
         let listItem = document.createElement("li");
         listItem.textContent = projects[i].name; 
         listItem.addEventListener('click', () => {
-            setWorkingProject(projects[i]); 
+            setWorkingProject(projects[i]);   
             updateDisplay(); 
         })
         ProjectsListElement.appendChild(listItem); 
@@ -37,20 +52,89 @@ function populateProjectList (projects){
 function populateTaskCards(project){
     for (let i=0; i<project.projectTasks.length; i++){
         let taskCardElement = document.createElement("ul"); 
+
         addTaskValue(project.projectTasks[i], 'taskName', taskCardElement); 
         addTaskValue(project.projectTasks[i], 'dueDate', taskCardElement); 
         addTaskValue(project.projectTasks[i], 'priorityRate', taskCardElement); 
         let editButtonElement = document.createElement("button"); 
         editButtonElement.textContent = "edit"; 
         editButtonElement.addEventListener('click', ()=> {
-            updateWorkingSpace(project.projectTasks[i]);
+            setWorkingTask(project.projectTasks[i]); 
+            updateWorkingSpace();
         });
         taskCardElement.appendChild(editButtonElement);
+
+        let deleteButtonElement = document.createElement("button"); 
+        deleteButtonElement.textContent = "Delete"; 
+        deleteButtonElement.addEventListener('click', ()=> {
+            deleteTask(project.projectTasks[i]);
+            updateDisplay(); 
+        });
+        taskCardElement.appendChild(deleteButtonElement);
 
         taskCardsElement.appendChild(taskCardElement); 
     }
 }
 
+function addTaskValue (task, property, cardElement){
+    let listItem = document.createElement("li");
+    listItem.textContent = task[[property]]; 
+    cardElement.appendChild(listItem);
+}
+
+function updateWorkingSpace() {
+    clearWorkingSpace(); 
+    const elements = [];
+
+    const taskNameField = createLabel('Task Name: ');
+    taskNameField.appendChild(createInput('text', 'taskNameInput', getWorkingTask().taskName));
+    elements.push(taskNameField);
+
+    const taskDescriptionField = createLabel('Task Description: ');
+    taskDescriptionField.appendChild(createInput('text', 'taskDescriptionInput', getWorkingTask().taskDescription));
+    elements.push(taskDescriptionField);
+
+    const dueDateField = createLabel('Due Date: ');
+    dueDateField.appendChild(createInput('date', 'dueDateInput', getWorkingTask().dueDate));
+    elements.push(dueDateField);
+
+    const priorityRateField = createLabel('Level of priority: ');
+    const priorityRateSelect = createSelect('priorityRateSelect', ['High', 'Middle', 'Low']);
+    priorityRateField.appendChild(priorityRateSelect);
+    elements.push(priorityRateField);
+
+    const saveButton = document.createElement('button'); 
+    saveButton.textContent = "Save"; 
+    saveButton.type = "submit";  
+    elements.push(saveButton); 
+
+    const handleSubmit = (event) => {
+        event.preventDefault();
+        event.stopImmediatePropagation(); 
+        updateWorkingTask(getFieldTaskValues()); 
+
+        function getFieldTaskValues() {
+            const taskNameInput = document.querySelector('input[name="taskNameInput"]');
+            const taskDescriptionInput = document.querySelector('input[name="taskDescriptionInput"]');
+            const dueDateInput = document.querySelector('input[name="dueDateInput"]');
+            const priorityRateSelect = document.querySelector('select[name="priorityRateSelect"]');
+  
+            const fieldTaskValues = {
+                taskName: taskNameInput.value,
+                taskDescription: taskDescriptionInput.value,
+                dueDate: dueDateInput.value,
+                priorityRate: priorityRateSelect.value
+            };
+            return fieldTaskValues;
+        }
+        updateDisplay(); 
+    };
+
+    const workSpaceElement = document.getElementById('workSpace');
+    workSpaceElement.addEventListener('submit', handleSubmit);
+
+    appendElementsToWorkspace(elements);
+}  
 
 function createLabel(text) {
     const label = document.createElement('label');
@@ -90,29 +174,40 @@ function appendElementsToWorkspace(elements) {
     });
 }
 
-function updateWorkingSpace(task) {
-    const elements = [];
 
-    const taskNameField = createLabel('Task Name: ');
-    taskNameField.appendChild(createInput('text', 'taskNameInput', task.taskName));
-    elements.push(taskNameField);
-
-    const taskDescriptionField = createLabel('Task Description: ');
-    taskDescriptionField.appendChild(createInput('text', 'taskDescriptionInput', task.taskDescription));
-    elements.push(taskDescriptionField);
-
-    const dueDateField = createLabel('Due Date: ');
-    dueDateField.appendChild(createInput('date', 'dueDateInput', task.dueDate));
-    elements.push(dueDateField);
-
-    const priorityRateField = createLabel('Level of priority: ');
-    const priorityRateSelect = createSelect('priorityRateSelect', ['High', 'Middle', 'Low']);
-    priorityRateField.appendChild(priorityRateSelect);
-    elements.push(priorityRateField);
-
-    appendElementsToWorkspace(elements);
+function clearWorkingSpace() {
+    while (workSpaceElement.firstChild) {
+        workSpaceElement.removeChild(workSpaceElement.firstChild);
+    }
 }
 
+
+function addTheAddTaskCard(){
+    const addTaskCardElement = document.createElement('button'); 
+    addTaskCardElement.textContent = "+"; 
+    addTaskCardElement.addEventListener('click', ()=>{
+        createEmptyActiveTask();   
+        updateWorkingSpace();  
+    })
+    taskCardsElement.appendChild(addTaskCardElement); 
+}
+
+function cleanTaskCards(){
+    while(taskCardsElement.firstChild){
+        taskCardsElement.removeChild(taskCardsElement.firstChild)
+    }
+    addTheAddTaskCard(); 
+}
+
+function cleanProjectList(){ 
+    while(ProjectsListElement.firstChild){
+        ProjectsListElement.removeChild(ProjectsListElement.firstChild); 
+    }
+}
+
+
+
+export {updateDisplay}; 
 
 /*
 original function written by me without chatgpt 
@@ -175,24 +270,24 @@ function updateWorkingSpace(task){
 
 */
 
+  /*
+    const saveButton = document.createElement('button'); 
+    saveButton.textContent = "Save"; 
+    saveButton.type = "submit";  
+    elements.push(saveButton); 
+    
+    workSpaceElement.addEventListener('submit', (event) => {
+        event.preventDefault();
+        event.stopImmediatePropagation(); 
+        console.log(task.taskName); 
+        if(task.taskName == ""){
+            console.log("creating a new task with save button"); 
+            saveWorkingTaskInWorkingProjectAnsdStoredProjects();
+        } else {
+            console.log("updating a task with save button"); 
+            upDateWorkingTaskInWorkingProjectAndStoredProjects(task); 
+        }
 
-function cleanTaskCards(){
-    while(taskCardsElement.firstChild){
-        taskCardsElement.removeChild(taskCardsElement.firstChild)
-    }
-}
-
-function cleanProjectList(){ 
-    while(ProjectsListElement.firstChild){
-        ProjectsListElement.removeChild(ProjectsListElement.firstChild); 
-    }
-}
-
-function addTaskValue (task, property, cardElement){
-    let listItem = document.createElement("li");
-    listItem.textContent = task[[property]]; 
-    cardElement.appendChild(listItem);
-}
-
-
-export default updateDisplay; 
+        updateDisplay(); 
+    });
+    */
